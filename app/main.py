@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import hmac
 import os
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import Generator, Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
@@ -241,3 +243,12 @@ def analyze_with_ai(
         "requires_human_review": True,
         "code_execution": False,
     }
+
+
+@app.get("/dashboard", include_in_schema=False)
+def dashboard() -> FileResponse:
+    """Entrega o painel web responsivo."""
+    dashboard_file = Path(__file__).resolve().parent.parent / "dashboard.html"
+    if not dashboard_file.is_file():
+        raise HTTPException(status_code=404, detail="Painel não encontrado.")
+    return FileResponse(dashboard_file, media_type="text/html")
