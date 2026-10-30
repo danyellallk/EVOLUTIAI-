@@ -70,3 +70,9 @@ def test_ai_analysis_reports_missing_api_key(monkeypatch):
     )
     assert response.status_code == 503
     assert "OPENAI_API_KEY" in response.json()["detail"]
+
+
+def test_dashboard_page_is_available():
+    response = client.get("/dashboard")
+    assert response.status_code == 200
+    assert "EVOLUTIA AI" in response.text
