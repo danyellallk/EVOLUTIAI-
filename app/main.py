@@ -182,3 +182,62 @@ def approve_improvement(improvement_id: int, _: None = Depends(require_admin), d
     db.commit()
     db.refresh(item)
     return item
+
+
+
+class AIAnalysisRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=4000)
+    context: Optional[str] = Field(default=None, max_length=12000)
+
+
+@app.post("/ai/analyze", tags=["Inteligência Artificial"])
+def analyze_with_ai(
+    payload: AIAnalysisRequest,
+    _: None = Depends(require_admin),
+) -> dict:
+    """Gera uma análise textual; nunca executa alterações nem publica código."""
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Integração de IA não configurada. Defina OPENAI_API_KEY no ambiente do servidor.",
+        )
+
+    model = os.getenv("OPENAI_MODEL", "gpt-5.5").strip() or "gpt-5.5"
+    prompt = (
+        "Analise a solicitação abaixo para a plataforma EVOLUTIA AI. "
+        "Responda em português do Brasil, separando: entendimento do problema, "
+        "análise, proposta de melhoria, riscos e próximos passos. "
+        "Não afirme que executou ações. Não solicite nem revele segredos. "
+        "Toda proposta exige avaliação e aprovação humana antes de qualquer implementação.\n\n"
+        f"Pergunta: {payload.question.strip()}\n"
+        f"Contexto: {(payload.context or 'Não informado').strip()}"
+    )
+
+    try:
+        from openai import APIError, OpenAI
+
+        client = OpenAI(api_key=api_key, timeout=30.0, max_retries=1)
+        response = client.responses.create(
+            model=model,
+            instructions=(
+                "Você é o módulo de análise da EVOLUTIA AI. "
+                "Produza análises úteis, prudentes e verificáveis. "
+                "Você não tem permissão para executar código, alterar arquivos ou aprovar propostas."
+            ),
+            input=prompt,
+            max_output_tokens=800,
+            store=False,
+        )
+    except APIError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="O serviço de IA não conseguiu concluir a análise. Verifique a configuração e tente novamente.",
+        ) from exc
+
+    return {
+        "analysis": response.output_text,
+        "model": model,
+        "requires_human_review": True,
+        "code_execution": False,
+    }
