@@ -3,17 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EVOLUTIA AI - Painel</title>
+<meta name="theme-color" content="#101827">
+<title>EVOLUTIA AI — Central de controle</title>
 <style>
-body{margin:0;padding:24px;background:#101827;color:#eef4ff;font:16px system-ui}
-main{max-width:760px;margin:auto}h1{color:#facc15}section{background:#1b293c;padding:18px;border-radius:14px;margin:14px 0}
-a{color:#93c5fd}p{line-height:1.6;color:#cbd5e1}
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b1220;color:#eef4ff;font:16px system-ui,sans-serif}main{max-width:960px;margin:auto;padding:22px}header{padding:24px 0 12px}h1{margin:0;color:#facc15;font-size:clamp(30px,6vw,46px)}header p,.muted{color:#a9b8cc;line-height:1.55}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}section{background:#172338;border:1px solid #2a3a53;border-radius:16px;padding:18px;margin:14px 0}h2{margin:0 0 12px;font-size:20px}label{display:block;margin:12px 0 6px;color:#cbd5e1;font-size:14px}input,textarea{width:100%;padding:12px;border-radius:9px;border:1px solid #40516b;background:#0c1728;color:white;font:inherit}textarea{min-height:90px;resize:vertical}button{border:0;border-radius:9px;background:#facc15;color:#111827;font-weight:700;padding:11px 15px;margin-top:12px;cursor:pointer}button.secondary{background:#33465f;color:#fff}button:disabled{opacity:.5}a{color:#93c5fd}.status{padding:12px;border-radius:9px;background:#0c1728;color:#cbd5e1}.item{border-top:1px solid #34445b;padding:12px 0}.tag{color:#facc15;font-size:13px}.result{white-space:pre-wrap;line-height:1.6;color:#dbeafe}.actions{display:flex;gap:8px;flex-wrap:wrap}.small{font-size:13px;color:#9fb0c7}footer{padding:24px 0;color:#8293aa;font-size:13px}@media(max-width:480px){main{padding:15px}section{padding:15px}}
 </style>
 </head>
 <body><main>
-<h1>EVOLUTIA AI</h1>
-<p>Painel inicial de acompanhamento da plataforma.</p>
-<section><h2>Estado do sistema</h2><p>Consulte a API e o banco de dados em <a href="/health">/health</a>.</p></section>
-<section><h2>Documentação e operações</h2><p><a href="/docs">Abrir documentação interativa da API</a></p><p><a href="/research">Consultar pesquisas</a></p><p><a href="/improvements">Consultar propostas de melhoria</a></p></section>
-<section><h2>Análise com IA</h2><p>A rota POST /ai/analyze está disponível quando a chave de API estiver configurada no servidor. Requer autenticação administrativa.</p></section>
-</main></body></html>
+<header><h1>EVOLUTIA AI</h1><p>Central de pesquisa, análise e evolução controlada. Toda mudança exige decisão humana.</p></header>
+<section><h2>Conexão administrativa</h2><p class="muted">Informe o token administrativo do seu próprio servidor. Ele fica apenas nesta página enquanto ela estiver aberta e não é enviado para nenhum outro serviço.</p><label for="token">Token administrativo</label><input id="token" type="password" autocomplete="off" placeholder="Cole aqui o token do servidor"><div class="actions"><button id="check">Verificar conexão</button><button class="secondary" id="refresh">Atualizar listas</button></div><p id="health" class="status" role="status">Aguardando verificação da API.</p></section>
+<div class="grid">
+<section><h2>Nova pesquisa</h2><form id="researchForm"><label for="question">Pergunta</label><input id="question" required minlength="3" maxlength="500" placeholder="O que devemos investigar?"><label for="context">Contexto (opcional)</label><textarea id="context" maxlength="10000" placeholder="Detalhes para orientar a pesquisa"></textarea><button>Registrar pesquisa</button></form></section>
+<section><h2>Propor melhoria</h2><form id="improvementForm"><label for="title">Título</label><input id="title" required minlength="3" maxlength="200" placeholder="Nome da melhoria"><label for="description">Descrição</label><textarea id="description" required minlength="5" maxlength="10000" placeholder="Explique a melhoria proposta"></textarea><button>Enviar proposta</button></form></section>
+</div>
+<section><h2>Análise assistida por IA</h2><p class="muted">Este recurso depende de uma chave de API externa e pode gerar custos. Para manter o projeto em R$ 0, não configure nem utilize essa integração por enquanto.</p><label for="aiQuestion">Pergunta para análise local/planejamento</label><textarea id="aiQuestion" placeholder="Escreva uma ideia para organizar ou avaliar..."></textarea><button class="secondary" id="localAnalyze">Organizar ideia sem chamar serviço pago</button><div id="analysis" class="result" aria-live="polite"></div></section>
+<div class="grid"><section><h2>Pesquisas registradas</h2><div id="researchList" class="muted">Carregue a lista para visualizar.</div></section><section><h2>Propostas de melhoria</h2><div id="improvementList" class="muted">Carregue a lista para visualizar.</div></section></div>
+<section><h2>Atalhos técnicos</h2><p><a href="/health">Saúde da API</a> · <a href="/docs">Documentação da API</a> · <a href="/">Status do sistema</a></p><p class="small">A EVOLUTIA AI não executa código nem aplica mudanças automaticamente.</p></section>
+<footer>EVOLUTIA AI · Protótipo experimental · Prioridade: segurança e custo zero.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const token=()=>$('token').value.trim();
+const auth=()=>({'Content-Type':'application/json','Authorization':'Bearer '+token()});
+async function api(path,options={}){const r=await fetch(path,{...options,headers:{...(options.headers||{}),...(options.body?auth():{})}});let data={};try{data=await r.json()}catch{}if(!r.ok)throw new Error(data.detail||('Erro HTTP '+r.status));return data}
+function message(el,text){$(el).textContent=text}
+async function check(){message('health','Verificando...');try{const d=await api('/health');message('health','Conectado · '+d.status+' · Banco: '+d.database+' · versão '+d.version)}catch(e){message('health','Não foi possível conectar: '+e.message)}}
+$('check').onclick=check;
+$('refresh').onclick=loadLists;
+$('researchForm').onsubmit=async e=>{e.preventDefault();try{await api('/research',{method:'POST',body:JSON.stringify({question:$('question').value,context:$('context').value||null})});e.target.reset();message('health','Pesquisa registrada com sucesso.');await loadLists()}catch(err){message('health','Falha ao registrar pesquisa: '+err.message)}};
+$('improvementForm').onsubmit=async e=>{e.preventDefault();try{await api('/improvements',{method:'POST',body:JSON.stringify({title:$('title').value,description:$('description').value})});e.target.reset();message('health','Proposta registrada. A aprovação continua sendo manual.');await loadLists()}catch(err){message('health','Falha ao registrar proposta: '+err.message)}};
+async function loadLists(){try{const [rs,ims]=await Promise.all([api('/research'),api('/improvements')]);$('researchList').innerHTML=rs.length?rs.map(x=>'<div class="item"><strong></strong><div class="tag"></div><p class="small"></p></div>').join(''):'Nenhuma pesquisa cadastrada.';[...$('researchList').children].forEach((el,i)=>{el.children[0].textContent=rs[i].question;el.children[1].textContent='Status: '+rs[i].status;el.children[2].textContent=new Date(rs[i].created_at).toLocaleString('pt-BR')});$('improvementList').innerHTML=ims.length?ims.map(x=>'<div class="item"><strong></strong><div class="tag"></div><p class="small"></p><div class="actions"></div></div>').join(''):'Nenhuma proposta cadastrada.';[...$('improvementList').children].forEach((el,i)=>{const x=ims[i];el.children[0].textContent=x.title;el.children[1].textContent='Status: '+x.status;el.children[2].textContent=x.description; if(x.status!=='approved'){const b=document.createElement('button');b.className='secondary';b.textContent='Aprovar proposta';b.onclick=async()=>{if(!confirm('Confirmar aprovação humana desta proposta?'))return;try{await api('/improvements/'+x.id+'/approve',{method:'POST',headers:auth()});await loadLists()}catch(e){message('health',e.message)}};el.children[3].append(b)}})}catch(e){message('health','Não foi possível carregar as listas: '+e.message)}}
+$('localAnalyze').onclick=()=>{const raw=$('aiQuestion').value.trim();if(!raw){message('analysis','Escreva uma ideia primeiro.');return}message('analysis','IDEIA RECEBIDA\n\nObjetivo: '+raw+'\n\nPara avançar sem custos:\n1. Definir o problema que será resolvido.\n2. Identificar quem será beneficiado.\n3. Descrever uma solução simples.\n4. Listar riscos e como testar.\n5. Registrar uma proposta e solicitar avaliação humana.\n\nEsta organização foi feita nesta página; nenhum serviço de IA pago foi chamado.')};
+</script></body></html>
