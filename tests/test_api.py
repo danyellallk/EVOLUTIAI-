@@ -53,3 +53,20 @@ def test_improvement_can_be_created_and_approved():
     assert approved.status_code == 200
     assert approved.json()["status"] == "approved"
     assert approved.json()["reviewed_at"] is not None
+
+
+def test_ai_analysis_requires_admin(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    denied = client.post("/ai/analyze", json={"question": "Como melhorar a plataforma?"})
+    assert denied.status_code == 401
+
+
+def test_ai_analysis_reports_missing_api_key(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    response = client.post(
+        "/ai/analyze",
+        headers=AUTH,
+        json={"question": "Como melhorar a plataforma?"},
+    )
+    assert response.status_code == 503
+    assert "OPENAI_API_KEY" in response.json()["detail"]
