@@ -24,6 +24,7 @@ API experimental para registrar perguntas de pesquisa e propostas de melhoria, c
 - `GET /` — status e versão.
 - `GET /health` — saúde da API e do banco.
 - `GET /docs` — documentação interativa.
+- `GET /dashboard` — painel web inicial.
 - `GET /research` — consulta de pesquisas.
 - `POST /research` — cria pesquisa (Bearer obrigatório).
 - `GET /improvements` — consulta propostas.
