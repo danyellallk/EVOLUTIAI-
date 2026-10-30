@@ -22,8 +22,10 @@ jobs:
     steps:
       - name: Baixar repositório
         uses: actions/checkout@v4
-      - name: Configurar GitHub Pages
+      - name: Ativar e configurar GitHub Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - name: Preparar arquivos do site
         uses: actions/upload-pages-artifact@v3
         with:
