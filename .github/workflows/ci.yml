@@ -27,4 +27,4 @@ jobs:
       - name: Verificar sintaxe Python
         run: python -m compileall -q app tests
       - name: Executar testes automatizados
-        run: pytest -q
+        run: PYTHONPATH=. pytest -q
