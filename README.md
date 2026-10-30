@@ -1,27 +1,41 @@
-# EVOLUTIA AI — versão 0.2
+# EVOLUTIA AI — versão 0.3
 
-Base experimental em nuvem para pesquisa e propostas de aperfeiçoamento com supervisão humana.
+API experimental para registrar perguntas de pesquisa e propostas de melhoria, com supervisão humana.
 
-## O que esta versão faz
-- API com status e verificação de saúde.
-- Registro e consulta de perguntas de pesquisa.
-- Registro e consulta de propostas de melhoria.
-- Proteção por chave administrativa (Bearer token) nas rotas que alteram dados.
-- Aprovação de proposta apenas para revisão controlada; não altera nem publica código automaticamente.
+## Recursos
+- API FastAPI com documentação interativa em `/docs`.
+- Verificação de saúde em `/health`, incluindo teste de conexão com o banco.
+- Cadastro e consulta de perguntas de pesquisa.
+- Cadastro e consulta de propostas de melhoria.
+- Aprovação administrativa de propostas, sem alteração automática de código.
+- Autenticação Bearer nas rotas que alteram dados.
+- Banco PostgreSQL no Render e SQLite para desenvolvimento local.
 
 ## Implantação no Render
-1. Envie o conteúdo desta pasta para a raiz de um repositório GitHub.
-2. No Render, escolha **New + → Blueprint** e conecte o repositório.
-3. O Render encontrará `render.yaml` e solicitará o valor de `EVOLUTIA_ADMIN_TOKEN`.
-4. Crie uma chave longa e aleatória e guarde-a em local privado. Nunca a coloque no GitHub.
-5. Após a implantação, teste `/health` e `/docs`.
+1. No Render, escolha **New + → Blueprint**.
+2. Conecte o repositório `danyellallk/EVOLUTIAI-`.
+3. O Render lerá `render.yaml` e solicitará `EVOLUTIA_ADMIN_TOKEN`.
+4. Gere uma chave longa e aleatória no próprio Render e guarde-a em local privado. Nunca coloque a chave no GitHub nem a envie em conversas.
+5. Após a implantação, teste `/`, `/health` e `/docs`.
 
 ## Rotas
-- `GET /` — status
-- `GET /health` — saúde do serviço
-- `GET /docs` — documentação interativa
-- `GET /research` e `GET /improvements` — consultas
-- `POST /research`, `POST /improvements` e `POST /improvements/{id}/approve` — exigem `Authorization: Bearer SUA_CHAVE`
+- `GET /` — status e versão.
+- `GET /health` — saúde da API e do banco.
+- `GET /docs` — documentação interativa.
+- `GET /research` — consulta de pesquisas.
+- `POST /research` — cria pesquisa (Bearer obrigatório).
+- `GET /improvements` — consulta propostas.
+- `POST /improvements` — cria proposta (Bearer obrigatório).
+- `POST /improvements/{id}/approve` — aprova proposta para revisão controlada (Bearer obrigatório).
+
+## Desenvolvimento local
+```bash
+python -m venv .venv
+# Ative o ambiente virtual e instale as dependências:
+pip install -r requirements.txt
+# Configure EVOLUTIA_ADMIN_TOKEN e, opcionalmente, DATABASE_URL.
+uvicorn app.main:app --reload
+```
 
 ## Limites e segurança
-Esta versão ainda não integra um modelo de IA, não faz pesquisa autônoma real e não modifica o próprio código. As rotas de alteração exigem chave administrativa. Proteja essa chave, não a compartilhe e não a envie em conversas. Antes de uso público, acrescente login individual, permissões por usuário, auditoria, limites de requisição e backups. Execução de experiências deve ocorrer em ambiente isolado.
+Esta versão ainda não integra um modelo de IA nem realiza pesquisa autônoma. A aprovação apenas marca uma proposta como aprovada; não executa nem publica código. Antes de uso público, implemente login individual, permissões por usuário, auditoria, limites de requisição, backups e testes automatizados. Qualquer execução experimental deve ocorrer em ambiente isolado. Proteja a chave administrativa e nunca a compartilhe.
